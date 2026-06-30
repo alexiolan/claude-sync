@@ -1,0 +1,9 @@
+/Users/alex/.claude/plugins/cache
+/Users/alex/.claude/.credentials.json
+/Users/alex/.claude/statsig
+/Users/alex/.claude/shell-snapshots
+/Users/alex/.claude/todos
+/Users/alex/.basic-memory/memory.db
+/Users/alex/.basic-memory/memory.db-wal
+/Users/alex/.basic-memory/memory.db-shm
+*.log

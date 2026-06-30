@@ -1,0 +1,17 @@
+{
+  "name": "claude-sync-marketplace",
+  "owner": {
+    "name": "Alex Ialanji"
+  },
+  "metadata": {
+    "description": "Encrypted off-site backup and restore for your Claude Code environment"
+  },
+  "plugins": [
+    {
+      "name": "claude-sync",
+      "version": "0.1.0",
+      "source": "./plugins/claude-sync",
+      "description": "Encrypted restic backups of ~/.claude and basic-memory to Cloudflare R2, with one-command restore on a fresh machine"
+    }
+  ]
+}

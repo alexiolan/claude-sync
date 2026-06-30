@@ -1,0 +1,4 @@
+# Runtime artifacts and local overrides — never commit these.
+backup.log
+*.local
+env.local.sh

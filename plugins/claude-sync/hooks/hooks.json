@@ -1,0 +1,27 @@
+{
+  "description": "claude-sync session capture hooks: record the git HEAD at session start and append a session activity log (commits + uncommitted files) to per-project memory at session end.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sid=$(jq -r '.session_id // empty' 2>/dev/null); [ -z \"$sid\" ] && exit 0; root=$(git rev-parse --show-toplevel 2>/dev/null); [ -z \"$root\" ] && exit 0; d=\"$HOME/.claude/.session-state\"; mkdir -p \"$d\"; f=\"$d/$sid\"; [ -f \"$f\" ] && exit 0; git rev-parse HEAD > \"$f\" 2>/dev/null; exit 0",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sid=$(jq -r '.session_id // empty' 2>/dev/null); root=$(git rev-parse --show-toplevel 2>/dev/null); [ -z \"$root\" ] && exit 0; proj=$(printf %s \"$root\" | sed 's|/|-|g'); state=\"$HOME/.claude/.session-state/$sid\"; startsha=$(cat \"$state\" 2>/dev/null); commits=\"\"; [ -n \"$startsha\" ] && commits=$(git log --oneline \"$startsha\"..HEAD 2>/dev/null | head -20); worktree=$( { git diff --name-only HEAD 2>/dev/null; git ls-files --others --exclude-standard 2>/dev/null; } | sort -u | sed '/^$/d' | head -20); if [ -z \"$commits\" ] && [ -z \"$worktree\" ]; then rm -f \"$state\"; exit 0; fi; dir=\"$HOME/.claude/projects/$proj/memory\"; mkdir -p \"$dir\"; log=\"$dir/session-log.md\"; branch=$(git branch --show-current 2>/dev/null); { echo \"\"; echo \"## Session $(date '+%Y-%m-%d %H:%M')\"; [ -n \"$branch\" ] && echo \"- Branch: $branch\"; if [ -n \"$commits\" ]; then echo \"- Commits:\"; echo \"$commits\" | sed 's/^/    - /'; fi; if [ -n \"$worktree\" ]; then echo \"- Uncommitted: $(printf %s \"$worktree\" | paste -sd, -)\"; fi; } >> \"$log\"; rm -f \"$state\"; exit 0",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}
