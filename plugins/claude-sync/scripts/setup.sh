@@ -90,12 +90,14 @@ log "Configuring secrets in $CONF_DIR"
 mkdir -p "$CONF_DIR"
 chmod 700 "$CONF_DIR"
 
-if [ -f "$CONF_DIR/r2-keys.sh" ] && [ -f "$CONF_DIR/restic-pass" ]; then
+if [ -f "$CONF_DIR/r2-keys.sh" ] && [ -f "$CONF_DIR/restic-pass" ] && [ -f "$CONF_DIR/r2-repo-url" ]; then
   note "Secret files already present — leaving them untouched."
   note "(Delete them and re-run if you need to rotate credentials.)"
 else
   note "Enter your Cloudflare R2 credentials and restic passphrase."
   note "Input is hidden and never printed back."
+  printf '    R2 bucket URL (e.g. s3:https://<account>.r2.cloudflarestorage.com/<bucket>): '
+  read -r R2_REPO_URL; echo
   printf '    R2 Access Key ID: '
   read -rs R2_KEY;    echo
   printf '    R2 Secret Access Key: '
@@ -104,13 +106,21 @@ else
   read -rs R2_PASS;   echo
 
   umask 077
+  printf '%s' "$R2_REPO_URL" > "$CONF_DIR/r2-repo-url"
   printf 'export AWS_ACCESS_KEY_ID="%s"\nexport AWS_SECRET_ACCESS_KEY="%s"\n' \
     "$R2_KEY" "$R2_SECRET" > "$CONF_DIR/r2-keys.sh"
   printf '%s' "$R2_PASS" > "$CONF_DIR/restic-pass"
-  chmod 600 "$CONF_DIR/r2-keys.sh" "$CONF_DIR/restic-pass"
+  chmod 600 "$CONF_DIR/r2-repo-url" "$CONF_DIR/r2-keys.sh" "$CONF_DIR/restic-pass"
   unset R2_KEY R2_SECRET R2_PASS
-  note "Wrote $CONF_DIR/r2-keys.sh and $CONF_DIR/restic-pass (chmod 600)."
+  note "Wrote $CONF_DIR/r2-repo-url, r2-keys.sh, and restic-pass (chmod 600)."
 fi
+
+# Patch env.sh with the real repo URL from the saved config file.
+R2_REPO_URL="$(cat "$CONF_DIR/r2-repo-url")"
+sed -i.bak "s|export RESTIC_REPOSITORY=.*|export RESTIC_REPOSITORY=\"${R2_REPO_URL}\"|" \
+  "$SYNC_DIR/env.sh" && rm -f "$SYNC_DIR/env.sh.bak"
+note "env.sh updated with repo URL."
+unset R2_REPO_URL
 
 # env.sh is already copied (step 4); load it now so restic sees the repo + creds.
 # shellcheck disable=SC1091

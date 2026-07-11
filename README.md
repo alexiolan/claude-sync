@@ -17,9 +17,8 @@ Excluded (see `scripts/excludes.txt`): the plugin cache, `.credentials.json`, st
 shell snapshots, todos, the SQLite index DBs, and any `*.log`. The index DB is excluded
 on purpose — it is rebuilt from the Markdown on restore.
 
-**Repo:** restic over S3 to
-`s3:https://e3a1c008a2d27ddd5ec7f197a961c86e.r2.cloudflarestorage.com/claude-backup`
-(`AWS_DEFAULT_REGION=auto`).
+**Repo:** restic over S3 to your private Cloudflare R2 bucket
+(`s3:https://<account>.r2.cloudflarestorage.com/<bucket>`, `AWS_DEFAULT_REGION=auto`).
 
 ---
 
@@ -31,13 +30,13 @@ manager) — if you lose the restic passphrase, the data is unrecoverable by any
 
 | # | Secret | Where it lives on a set-up machine |
 |---|--------|------------------------------------|
-| 1 | **R2 Access Key ID**        | `~/.config/claude-sync/r2-keys.sh` (chmod 600) |
-| 2 | **R2 Secret Access Key**    | `~/.config/claude-sync/r2-keys.sh` (chmod 600) |
-| 3 | **restic repo passphrase**  | `~/.config/claude-sync/restic-pass` (chmod 600) |
-| 4 | **R2 bucket/endpoint URL**  | `~/claude-sync/env.sh` (not secret, but needed) |
+| 1 | **R2 bucket URL**           | `~/.config/claude-sync/r2-repo-url` (chmod 600) |
+| 2 | **R2 Access Key ID**        | `~/.config/claude-sync/r2-keys.sh` (chmod 600) |
+| 3 | **R2 Secret Access Key**    | `~/.config/claude-sync/r2-keys.sh` (chmod 600) |
+| 4 | **restic repo passphrase**  | `~/.config/claude-sync/restic-pass` (chmod 600) |
 
-The first three are true secrets and are the input to `/claude-sync:setup`. None of them
-are stored in this repo or printed by any command.
+All four are prompted (hidden input) by `/claude-sync:setup` and written to
+`~/.config/claude-sync/` (chmod 600). None are stored in this repo or printed by any command.
 
 ---
 
@@ -67,8 +66,8 @@ You just got a new machine and want everything back:
    There is **no Google / OAuth step** — this is a private R2 bucket. Setup will:
    - install Homebrew (if missing), `restic`, `uv`, and `basic-memory`;
    - copy the runtime into `~/claude-sync`;
-   - **prompt (hidden input) for R2 Access Key, R2 Secret, and the restic passphrase** —
-     the three secrets above;
+   - **prompt (hidden input) for the R2 bucket URL, R2 Access Key, R2 Secret, and the
+     restic passphrase** — the four secrets above;
    - write them to the `chmod 600` files in `~/.config/claude-sync/`;
    - verify it can read the (already-existing) repo;
    - `restic restore latest` into `~/.claude` and `~/basic-memory`;
@@ -135,9 +134,10 @@ is captured in the notes that then get backed up.
 ## Files
 
 ```
+~/.config/claude-sync/r2-repo-url   # restic repo URL / R2 bucket endpoint (600)
 ~/.config/claude-sync/r2-keys.sh    # AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY (600)
 ~/.config/claude-sync/restic-pass   # restic passphrase (600)
-~/claude-sync/env.sh                # repo URL + env wiring (no secrets)
+~/claude-sync/env.sh                # env wiring (patched by setup with your repo URL)
 ~/claude-sync/backup.sh             # the scheduled backup
 ~/claude-sync/restore.sh            # staged restore + placement steps
 ~/claude-sync/status.sh             # read-only health check
