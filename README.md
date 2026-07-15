@@ -7,6 +7,12 @@ config and your [basic-memory](https://github.com/basicmachines-co/basic-memory)
 and pushes them to a private Cloudflare R2 bucket. On a fresh laptop, one command pulls
 everything back and re-wires your machine.
 
+> **Platform support (WIP):** claude-sync currently runs on **macOS only**. Native
+> **Windows** support is designed but not yet implemented — the audit findings and the
+> agreed plan (native Windows + a shared Python core, no WSL2) live in
+> [`docs/cross-platform-support.md`](docs/cross-platform-support.md). Start there
+> before touching Windows.
+
 ## What gets backed up
 
 - `~/.claude` (settings, projects, memory, agents, commands — minus caches/credentials)
