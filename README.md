@@ -3,7 +3,7 @@
 Encrypted, off-site backup and restore for your Claude Code environment.
 
 `claude-sync` takes encrypted [restic](https://restic.net) snapshots of your Claude
-config and your [basic-memory](https://github.com/basicmachines-co/basic-memory) notes
+config and your [claude-mem](https://github.com/thedotmack/claude-mem) memory
 and pushes them to a private Cloudflare R2 bucket. On a fresh laptop, one command pulls
 everything back and re-wires your machine.
 
@@ -16,12 +16,12 @@ everything back and re-wires your machine.
 ## What gets backed up
 
 - `~/.claude` (settings, projects, memory, agents, commands — minus caches/credentials)
-- `~/basic-memory` (all your notes, as plain Markdown)
-- `~/.basic-memory/config.json` (the basic-memory project registry)
+- `~/.claude-mem` (claude-mem memory: a consistent `claude-mem.snapshot.db` copy of its SQLite DB)
 
 Excluded (see `scripts/excludes.txt`): the plugin cache, `.credentials.json`, statsig,
-shell snapshots, todos, the SQLite index DBs, and any `*.log`. The index DB is excluded
-on purpose — it is rebuilt from the Markdown on restore.
+shell snapshots, todos, and any `*.log`. In `~/.claude-mem` the live `claude-mem.db`
+(+ `-wal`/`-shm`), `chroma/` and `logs/` are excluded on purpose: the snapshot DB is
+restored instead, and claude-mem rebuilds the Chroma index from SQLite.
 
 **Repo:** restic over S3 to your private Cloudflare R2 bucket
 (`s3:https://<account>.r2.cloudflarestorage.com/<bucket>`, `AWS_DEFAULT_REGION=auto`).
@@ -55,8 +55,7 @@ Add the marketplace and install the plugin:
 /plugin install claude-sync@claude-sync-marketplace
 ```
 
-This registers the four slash commands, the session-capture hooks, and the global
-`basic-memory` MCP server.
+This registers the four slash commands and the session-capture hooks.
 
 ---
 
@@ -70,17 +69,16 @@ You just got a new machine and want everything back:
    /claude-sync:setup
    ```
    There is **no Google / OAuth step** — this is a private R2 bucket. Setup will:
-   - install Homebrew (if missing), `restic`, `uv`, and `basic-memory`;
+   - install Homebrew (if missing) and `restic`;
    - copy the runtime into `~/claude-sync`;
    - **prompt (hidden input) for the R2 bucket URL, R2 Access Key, R2 Secret, and the
      restic passphrase** — the four secrets above;
    - write them to the `chmod 600` files in `~/.config/claude-sync/`;
    - verify it can read the (already-existing) repo;
-   - `restic restore latest` into `~/.claude` and `~/basic-memory`;
-   - recreate `~/.basic-memory/config.json`, re-register each restored project by its
-     local path, and run `basic-memory reindex --full`;
+   - `restic restore latest` into `~/.claude` and `~/.claude-mem`;
+   - promote `claude-mem.snapshot.db` to `claude-mem.db` if no live DB exists;
    - install + load the `com.alex.claude-backup` LaunchAgent (runs at load, then every 2h).
-3. **Restart Claude Code** so the restored config and MCP server load.
+3. **Restart Claude Code** so the restored config loads.
 
 That's it — your sessions, memory, and notes are back, and ongoing backups are already
 scheduled.
@@ -94,7 +92,7 @@ scheduled.
 | `/claude-sync:setup`   | First-run bootstrap on a new machine (interactive). Runs the plugin's own `scripts/setup.sh`. |
 | `/claude-sync:backup`  | Force an immediate snapshot now. Runs `~/claude-sync/backup.sh`. |
 | `/claude-sync:restore` | Restore latest (or `--snapshot <id>`) into the staging dir `~/claude-restore` and print non-destructive placement steps. Runs `~/claude-sync/restore.sh`. |
-| `/claude-sync:status`  | Read-only health check: last-snapshot age, recent snapshots, repo size, LaunchAgent state, log tail, basic-memory project count. Runs `~/claude-sync/status.sh`. |
+| `/claude-sync:status`  | Read-only health check: last-snapshot age, recent snapshots, repo size, LaunchAgent state, log tail, claude-mem db size. Runs `~/claude-sync/status.sh`. |
 
 `backup`, `restore`, and `status` call the stable scripts under `~/claude-sync/` (present
 after setup). `setup` calls the plugin's own bundled `scripts/setup.sh`, because
@@ -103,7 +101,7 @@ after setup). `setup` calls the plugin's own bundled `scripts/setup.sh`, because
 ### Restore is non-destructive
 
 `/claude-sync:restore` only writes to `~/claude-restore` and then prints the exact
-`rsync` + `reindex` commands to place files. Review them and run them yourself — nothing
+`rsync` commands to place files. Review them and run them yourself — nothing
 overwrites your live config automatically.
 
 ---

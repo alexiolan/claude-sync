@@ -3,8 +3,14 @@
 set -euo pipefail
 source "$HOME/claude-sync/env.sh"
 
+CM_DB="$HOME/.claude-mem/claude-mem.db"
+if [ -f "$CM_DB" ]; then
+  sqlite3 "$CM_DB" ".backup '$HOME/.claude-mem/claude-mem.snapshot.db'" \
+    || echo "warning: claude-mem snapshot failed" >&2
+fi
+
 restic backup \
-  "$HOME/.claude" "$HOME/basic-memory" "$HOME/.basic-memory/config.json" \
+  "$HOME/.claude" "$HOME/.claude-mem" \
   --exclude-file "$HOME/claude-sync/excludes.txt" \
   --tag claude-env "$@"
 

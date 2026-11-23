@@ -9,9 +9,9 @@
   "plugins": [
     {
       "name": "claude-sync",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "source": "./plugins/claude-sync",
-      "description": "Encrypted restic backups of ~/.claude and basic-memory to Cloudflare R2, with one-command restore on a fresh machine"
+      "description": "Encrypted restic backups of ~/.claude and claude-mem to Cloudflare R2, with one-command restore on a fresh machine"
     }
   ]
 }

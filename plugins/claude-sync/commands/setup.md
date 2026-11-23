@@ -1,5 +1,5 @@
 ---
-description: Bootstrap claude-sync on this machine (install restic + basic-memory, write secrets, restore from R2, install the backup LaunchAgent)
+description: Bootstrap claude-sync on this machine (install restic, write secrets, restore from R2, install the backup LaunchAgent)
 argument-hint: ''
 allowed-tools: Bash(bash:*)
 disable-model-invocation: true

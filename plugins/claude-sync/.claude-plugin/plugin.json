@@ -1,7 +1,7 @@
 {
   "name": "claude-sync",
-  "version": "0.1.0",
-  "description": "Encrypted restic backups of ~/.claude and basic-memory to Cloudflare R2, with one-command restore on a fresh machine",
+  "version": "0.2.0",
+  "description": "Encrypted restic backups of ~/.claude and claude-mem to Cloudflare R2, with one-command restore on a fresh machine",
   "author": {
     "name": "Alex Ialanji"
   },
@@ -14,7 +14,7 @@
     "restore",
     "r2",
     "cloudflare",
-    "basic-memory",
+    "claude-mem",
     "disaster-recovery"
   ]
 }

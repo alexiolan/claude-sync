@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # claude-sync setup — idempotent new-machine bootstrap.
 #
-# Installs restic + basic-memory, copies the runtime into ~/claude-sync, prompts
+# Installs restic, copies the runtime into ~/claude-sync, prompts
 # (hidden input) for the R2 keys + restic passphrase, writes the 600 secret files,
-# verifies repo access, restores the latest snapshot into ~/.claude and ~/basic-memory,
-# re-registers basic-memory projects, reindexes, and installs+loads the backup LaunchAgent.
+# verifies repo access, restores the latest snapshot into ~/.claude and ~/.claude-mem,
+# and installs+loads the backup LaunchAgent.
 #
 # Safe to re-run: every step checks for existing state before acting. Secrets are
 # never echoed. This script lives inside the plugin so it works on a machine where
@@ -47,26 +47,6 @@ if command -v restic >/dev/null 2>&1; then
 else
   note "Installing restic via Homebrew..."
   brew install restic
-fi
-
-# ---------------------------------------------------------------------------
-# 3. uv + basic-memory
-# ---------------------------------------------------------------------------
-log "Checking uv + basic-memory"
-if command -v uv >/dev/null 2>&1; then
-  note "uv already installed: $(command -v uv)"
-else
-  note "Installing uv..."
-  curl -LsSf https://astral.sh/uv/install.sh | sh
-  # uv installs to ~/.local/bin
-  export PATH="$HOME/.local/bin:$PATH"
-fi
-export PATH="$HOME/.local/bin:$PATH"
-if uv tool list 2>/dev/null | grep -q '^basic-memory'; then
-  note "basic-memory tool already installed"
-else
-  note "Installing basic-memory as a uv tool..."
-  uv tool install basic-memory
 fi
 
 # ---------------------------------------------------------------------------
@@ -142,39 +122,22 @@ fi
 # ---------------------------------------------------------------------------
 # 7. Restore latest snapshot into place
 # ---------------------------------------------------------------------------
-log "Restoring latest snapshot into ~/.claude and ~/basic-memory"
+log "Restoring latest snapshot into ~/.claude and ~/.claude-mem"
 # restic preserves absolute paths; restoring to '/' lands files at their original homes.
 # Restored content is additive (rsync-like overwrite of restored paths only).
 restic restore latest --target / \
   --include "$HOME/.claude" \
-  --include "$HOME/basic-memory" \
-  --include "$HOME/.basic-memory/config.json"
+  --include "$HOME/.claude-mem"
 note "Restore complete."
 
 # ---------------------------------------------------------------------------
-# 8. basic-memory: recreate config + re-register projects + reindex
+# 8. claude-mem: promote the snapshot DB (chroma is rebuilt by claude-mem)
 # ---------------------------------------------------------------------------
-log "Re-registering basic-memory projects from restored notes"
-mkdir -p "$HOME/.basic-memory"
-# config.json was restored in step 7 if it existed in the snapshot.
-if [ ! -f "$HOME/.basic-memory/config.json" ]; then
-  printf '{\n  "projects": {},\n  "default_project": "main"\n}\n' > "$HOME/.basic-memory/config.json"
-  note "No config.json in snapshot — wrote a minimal one."
+CM="$HOME/.claude-mem"
+if [ -f "$CM/claude-mem.snapshot.db" ] && [ ! -f "$CM/claude-mem.db" ]; then
+  mv "$CM/claude-mem.snapshot.db" "$CM/claude-mem.db"
+  note "Restored claude-mem.db from snapshot."
 fi
-
-# Register every restored project folder by its local path.
-if [ -d "$HOME/basic-memory" ]; then
-  for proj in "$HOME/basic-memory"/*/; do
-    [ -d "$proj" ] || continue
-    name="$(basename "$proj")"
-    note "registering project '$name' -> $proj"
-    uvx basic-memory project add "$name" "$proj" 2>/dev/null \
-      || note "  (already registered or add failed — continuing)"
-  done
-fi
-
-note "Reindexing basic-memory (full)..."
-uvx basic-memory reindex --full || note "reindex reported a non-zero status — review manually"
 
 # ---------------------------------------------------------------------------
 # 9. Install + load the LaunchAgent

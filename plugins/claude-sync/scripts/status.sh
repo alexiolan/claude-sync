@@ -55,11 +55,10 @@ else
 fi
 echo
 
-echo "---- basic-memory projects ----"
-bm_count=$(uvx basic-memory project list 2>/dev/null | wc -l | tr -d ' ')
-if [ -n "$bm_count" ] && [ "$bm_count" -gt 0 ] 2>/dev/null; then
-  echo "project list lines: $bm_count"
+echo "---- claude-mem ----"
+if [ -f "$HOME/.claude-mem/claude-mem.db" ]; then
+  du -h "$HOME/.claude-mem/claude-mem.db" | cut -f1 | sed 's/^/db size: /'
 else
-  echo "(basic-memory not available or no projects)"
+  echo "(no ~/.claude-mem/claude-mem.db)"
 fi
 echo "=============================================================="

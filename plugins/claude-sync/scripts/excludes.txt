@@ -3,7 +3,9 @@
 /Users/alex/.claude/statsig
 /Users/alex/.claude/shell-snapshots
 /Users/alex/.claude/todos
-/Users/alex/.basic-memory/memory.db
-/Users/alex/.basic-memory/memory.db-wal
-/Users/alex/.basic-memory/memory.db-shm
+/Users/alex/.claude-mem/claude-mem.db
+/Users/alex/.claude-mem/claude-mem.db-wal
+/Users/alex/.claude-mem/claude-mem.db-shm
+/Users/alex/.claude-mem/chroma
+/Users/alex/.claude-mem/logs
 *.log

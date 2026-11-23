@@ -1,5 +1,5 @@
 ---
-description: Show claude-sync health — last snapshot age, recent snapshots, repo stats, LaunchAgent state, log tail, and basic-memory project count
+description: Show claude-sync health — last snapshot age, recent snapshots, repo stats, LaunchAgent state, log tail, and claude-mem db size
 argument-hint: ''
 allowed-tools: Bash(bash:*)
 disable-model-invocation: true
